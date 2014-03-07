@@ -1,12 +1,10 @@
 import Mouse
+import Window
 
-relativeMouse : (Int, Int) -> (Int, Int)
-relativeMouse (x,y) = (x - 100, y - 100)
-
-myText : (Int, Int) -> Element
-myText = asText . relativeMouse
+relativeMouse : (Int, Int) -> (Int, Int) -> (Int, Int)
+relativeMouse (ox, oy) (x,y) = (x - ox, y - oy)
 
 main : Signal Element
-main = lift myText Mouse.position
+main = lift asText <| relativeMouse <~ Window.dimensions ~ Mouse.position
 
 
