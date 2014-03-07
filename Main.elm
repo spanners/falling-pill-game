@@ -34,7 +34,7 @@ defaultPill = { pos = (0,hHeight)
               , col = lightRed }
 
 defaultPlayer = { defaultPill | col <- black
-                ,               pos <- (0, 0) }
+                ,               pos <- (0, -hHeight - defaultPill.rad) }
 
 data State = Play | Over
 type Game = { player : Pill 
