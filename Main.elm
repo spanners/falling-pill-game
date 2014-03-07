@@ -83,10 +83,11 @@ click event =
 stepGame : Event -> Game -> Game 
 stepGame event ({state} as g) =
     let playGame = { defaultGame | state <- Play }
+        toPlay = if click event then playGame else g
     in case state of
-         Start -> if click event then playGame else g
+         Start -> toPlay 
          Play  -> stepPlay event g
-         Over  -> if click event then defaultGame else g 
+         Over  -> toPlay
 
 stepPlayer : (Int, Int) -> Pill -> Pill
 stepPlayer (x,y) p = { p | pos <- (toFloat x, toFloat y) }
