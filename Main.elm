@@ -12,6 +12,9 @@ type Vec = (Float, Float)
 vecAdd : Vec -> Vec -> Vec
 vecAdd (x1,y1) (x2,y2) = (x1+x2, y1+y2)
 
+vecMulS : Vec -> Time -> Vec
+vecMulS (x, y) t = (x*t, y*t)
+
 type Pill = {pos:Vec, vel:Vec, rad:Float, col:Color}
 
 
@@ -21,7 +24,7 @@ defaultPill = { pos = (0,0)
               , col = lightRed }
 
 stepPill : Time -> Pill -> Pill
-stepPill t p = { p | pos <- vecAdd p.pos p.vel }
+stepPill t p = { p | pos <- vecAdd p.pos (vecMulS p.vel t) }
 
 render : (Int, Int) -> Pill -> Element
 render (w, h) pill = 
