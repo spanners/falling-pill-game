@@ -29,7 +29,7 @@ type Pill = {pos:Vec, vel:Vec, rad:Float, col:Color}
 
 
 defaultPill = { pos = (0,hHeight)
-              , vel = (0,-100)
+              , vel = (0,-500)
               , rad = 15
               , col = lightRed }
 
@@ -58,8 +58,11 @@ stepGame event g =
                               offscreen {pos} = snd pos > -hHeight
                               unculled = filter offscreen g.pills
                               untouched = filter (not . hit) unculled
+                              touched = filter hit unculled
+                              hitBlue = not <| isEmpty <| filter (\{col} -> col == lightBlue) touched
                           in { g | player <- stepPlayer mouse g.player
-                             , pills <- map (stepPill t) untouched }
+                                 , pills  <- map (stepPill t) untouched
+                                 , score  <- if hitBlue then g.score + 1 else g.score }
        Add p           -> { g | pills <- p :: g.pills }
 
 stepPlayer : (Int, Int) -> Pill -> Pill
@@ -81,7 +84,7 @@ render (w, h) g =
     let formPill {rad, col, pos} = 
                      circle rad |> filled col
                                 |> move pos
-        txt = tf 0 2 "Simon"
+        txt = tf 0 2 (show g.score) 
         forms = txt :: (map formPill <| g.player :: g.pills)
     in color lightGray <| container w h middle 
                        <| color white
@@ -102,7 +105,7 @@ rand fn sig = lift fn (randFloat sig)
 randX = rand (\r -> (width * r) + -hWidth)
 randCol = rand (\r -> if r < 0.1 then lightBlue else defaultPill.col)
 
-interval = (every (second * 2))
+interval = (every (second * 0.5))
 
 event = merges [ lift Tick input
                , lift2 (\x col -> Add (newPill x col)) 
