@@ -36,7 +36,7 @@ defaultPill = { pos = (0,hHeight)
 defaultPlayer = { defaultPill | col <- black
                 ,               pos <- (0, -hHeight - defaultPill.rad) }
 
-data State = Play | Over
+data State = Play | Over | Start
 type Game = { player : Pill 
             , pills  : [Pill]
             , score  : Int
@@ -45,7 +45,7 @@ type Game = { player : Pill
 defaultGame = { player = defaultPlayer
               , pills  = [] 
               , score  = 0 
-              , state  = Play }
+              , state  = Start }
 
 newPill : Float -> Color -> Pill
 newPill x col = { defaultPill | pos <- (x, hHeight) 
@@ -82,9 +82,11 @@ click event =
 
 stepGame : Event -> Game -> Game 
 stepGame event ({state} as g) =
-    case state of
-        Play -> stepPlay event g
-        Over -> if click event then defaultGame else g 
+    let playGame = { defaultGame | state <- Play }
+    in case state of
+         Start -> if click event then playGame else g
+         Play  -> stepPlay event g
+         Over  -> if click event then defaultGame else g 
 
 stepPlayer : (Int, Int) -> Pill -> Pill
 stepPlayer (x,y) p = { p | pos <- (toFloat x, toFloat y) }
@@ -106,10 +108,12 @@ render (w, h) g =
                      circle rad |> filled col
                                 |> move pos
         txts = case g.state of
-                 Play -> [ tf 0 4 (show g.score) ] 
-                 Over -> [ tf 70 4 "Game Over"
-                         , tf 0 4 (show g.score)
-                         , tf -100 2 "Click to Restart" ]
+                 Start -> [ tf 70  4 "BluePiLL"
+                          , tf 0   2 "Click to Start"   ]
+                 Play  -> [ tf 0   4 (show g.score)     ] 
+                 Over  -> [ tf 70  4 "Game Over"
+                          , tf 0   4 (show g.score)
+                          , tf -50 2 "Click to Restart" ]
         forms = txts ++ (map formPill <| g.player :: g.pills)
     in color lightGray <| container w h middle 
                        <| color white
