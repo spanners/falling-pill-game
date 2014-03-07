@@ -59,10 +59,13 @@ stepGame event g =
                               unculled = filter offscreen g.pills
                               untouched = filter (not . hit) unculled
                               touched = filter hit unculled
-                              hitBlue = not <| isEmpty <| filter (\{col} -> col == lightBlue) touched
-                          in { g | player <- stepPlayer mouse g.player
-                                 , pills  <- map (stepPill t) untouched
-                                 , score  <- if hitBlue then g.score + 1 else g.score }
+                              hitColor c = not <| isEmpty <| filter (\{col} -> col == c) touched
+                              hitBlue = hitColor lightBlue
+                              hitRed = hitColor lightRed
+                              g' = { g | player <- stepPlayer mouse g.player
+                                   , pills  <- map (stepPill t) untouched
+                                   , score  <- if hitBlue then g.score + 1 else g.score }
+                          in if hitRed then defaultGame else g'
        Add p           -> { g | pills <- p :: g.pills }
 
 stepPlayer : (Int, Int) -> Pill -> Pill
@@ -84,7 +87,7 @@ render (w, h) g =
     let formPill {rad, col, pos} = 
                      circle rad |> filled col
                                 |> move pos
-        txt = tf 0 2 (show g.score) 
+        txt = tf 0 4 (show g.score) 
         forms = txt :: (map formPill <| g.player :: g.pills)
     in color lightGray <| container w h middle 
                        <| color white
