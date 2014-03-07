@@ -29,7 +29,7 @@ type Pill = {pos:Vec, vel:Vec, rad:Float, col:Color}
 
 
 defaultPill = { pos = (0,hHeight)
-              , vel = (0,-30)
+              , vel = (0,-100)
               , rad = 15
               , col = lightRed }
 
@@ -41,8 +41,9 @@ type Game = { player:Pill, pills:[Pill] }
 defaultGame = { player = defaultPlayer
               , pills  = [] }
 
-newPill : Float -> Pill
-newPill x = { defaultPill | pos <- (x, hHeight) }
+newPill : Float -> Color -> Pill
+newPill x col = { defaultPill | pos <- (x, hHeight) 
+                              , col <- col }
 
 data Event = Tick (Time, (Int, Int)) | Add Pill
 
@@ -79,12 +80,19 @@ input = (,) <~ lift inSeconds delta
 
 randFloat sig = (lift (\x -> x / 100) (lift toFloat (Random.range 0 100 sig)))
 
-randx sig = let rnd = randFloat sig
+randX sig = let rnd = randFloat sig
                 coord r = (width * r) + -hWidth
             in lift coord rnd
 
+randCol sig = let rnd = randFloat sig
+                  col r = if r < 0.1 then lightBlue else defaultPill.col
+            in lift col rnd
+
+
+interval = (every (second * 2))
+
 event = merges [ lift Tick input
-               , lift (Add . newPill) <| randx (every (second * 3)) ]
+               , lift2 (\x col -> Add (newPill x col)) (randX interval) (randCol interval) ]
 
 main : Signal Element
 main = render <~ Window.dimensions ~ foldp stepGame defaultGame event
