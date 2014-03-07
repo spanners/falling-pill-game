@@ -35,19 +35,17 @@ defaultPill = { pos = (0,hHeight)
 defaultPlayer = { defaultPill | col <- black
                 ,               pos <- (0, 0) }
 
-type Game = { player:Pill, pill:Pill}
+type Game = { player:Pill, pills:[Pill] }
 
 defaultGame = { player = defaultPlayer
-              , pill   = defaultPill
-              }
+              , pills   = map (\i -> { defaultPill | pos <- (i * 50, hHeight)}) [0..3] }
 
 stepGame: (Time, (Int, Int)) -> Game -> Game 
-stepGame (t, mouse) ({player, pill} as g) = 
-   let hit = (vecLen <| vecSub player.pos pill.pos) < player.rad + pill.rad
-       player' = { player | col <- if hit then lightRed else player.col }
-   in { g | player <- stepPlayer mouse player'
-      , pill <- stepPill t g.pill
-      }
+stepGame (t, mouse) ({player, pills} as g) = 
+   let hit pill = (vecLen <| vecSub player.pos pill.pos) < player.rad + pill.rad
+       untouched = filter (not . hit) pills
+   in { g | player <- stepPlayer mouse player
+          , pills <- map (stepPill t) untouched }
 
 stepPlayer : (Int, Int) -> Pill -> Pill
 stepPlayer (x,y) p = { p | pos <- (toFloat x, toFloat y) }
@@ -60,7 +58,7 @@ render (w, h) game =
     let formPill {rad, col, pos} = 
                      circle rad |> filled col
                                 |> move pos
-        forms = [formPill game.player, formPill game.pill] 
+        forms = formPill game.player :: map formPill game.pills 
     in color lightGray <| container w h middle 
                        <| color white
                        <| collage width height forms
