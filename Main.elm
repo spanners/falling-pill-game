@@ -1,5 +1,6 @@
 import Mouse
 import Window
+import Random
 
 (width, height) = (400, 400)
 (hWidth, hHeight) = (width / 2, height / 2)
@@ -40,6 +41,9 @@ type Game = { player:Pill, pills:[Pill] }
 defaultGame = { player = defaultPlayer
               , pills  = [] }
 
+newPill : Float -> Pill
+newPill x = { defaultPill | pos <- (x, hHeight) }
+
 data Event = Tick (Time, (Int, Int)) | Add Pill
 
 stepGame: Event -> Game -> Game 
@@ -73,8 +77,14 @@ delta = (fps 30)
 input = (,) <~ lift inSeconds delta
              ~ sampleOn delta (lift2 relativeMouse (lift center Window.dimensions) Mouse.position)
 
+randFloat sig = (lift (\x -> x / 100) (lift toFloat (Random.range 0 100 sig)))
+
+randx sig = let rnd = randFloat sig
+                coord r = (width * r) + -hWidth
+            in lift coord rnd
+
 event = merges [ lift Tick input
-               , lift (Add . (\_ -> defaultPill)) (every (second * 3)) ]
+               , lift (Add . newPill) <| randx (every (second * 3)) ]
 
 main : Signal Element
 main = render <~ Window.dimensions ~ foldp stepGame defaultGame event
