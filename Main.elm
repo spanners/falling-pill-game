@@ -38,14 +38,18 @@ defaultPlayer = { defaultPill | col <- black
 type Game = { player:Pill, pills:[Pill] }
 
 defaultGame = { player = defaultPlayer
-              , pills   = map (\i -> { defaultPill | pos <- (i * 50, hHeight)}) [0..3] }
+              , pills  = [] }
 
-stepGame: (Time, (Int, Int)) -> Game -> Game 
-stepGame (t, mouse) ({player, pills} as g) = 
-   let hit pill = (vecLen <| vecSub player.pos pill.pos) < player.rad + pill.rad
-       untouched = filter (not . hit) pills
-   in { g | player <- stepPlayer mouse player
-          , pills <- map (stepPill t) untouched }
+data Event = Tick (Time, (Int, Int)) | Add Pill
+
+stepGame: Event -> Game -> Game 
+stepGame event ({player, pills} as g) = 
+   case event of 
+       Tick (t, mouse) -> let hit pill = (vecLen <| vecSub player.pos pill.pos) < player.rad + pill.rad
+                              untouched = filter (not . hit) pills
+                          in { g | player <- stepPlayer mouse player
+                             , pills <- map (stepPill t) untouched }
+       Add p           -> { g | pills <- p :: g.pills }
 
 stepPlayer : (Int, Int) -> Pill -> Pill
 stepPlayer (x,y) p = { p | pos <- (toFloat x, toFloat y) }
@@ -68,5 +72,8 @@ delta = (fps 30)
 input = (,) <~ lift inSeconds delta
              ~ sampleOn delta (lift2 relativeMouse (lift center Window.dimensions) Mouse.position)
 
+event = merges [ lift Tick input
+               , lift (Add . (\_ -> defaultPill)) (every (second * 3)) ]
+
 main : Signal Element
-main = render <~ Window.dimensions ~ foldp stepGame defaultGame input 
+main = render <~ Window.dimensions ~ foldp stepGame defaultGame event
