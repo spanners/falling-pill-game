@@ -46,7 +46,8 @@ stepGame: Event -> Game -> Game
 stepGame event ({player, pills} as g) = 
    case event of 
        Tick (t, mouse) -> let hit pill = (vecLen <| vecSub player.pos pill.pos) < player.rad + pill.rad
-                              untouched = filter (not . hit) pills
+                              unculled = filter (\{pos} -> snd pos > -hHeight) pills
+                              untouched = filter (not . hit) unculled
                           in { g | player <- stepPlayer mouse player
                              , pills <- map (stepPill t) untouched }
        Add p           -> { g | pills <- p :: g.pills }
