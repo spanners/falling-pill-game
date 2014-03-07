@@ -2,14 +2,28 @@ import Mouse
 import Window
 import Random
 
+-- CONFIG
+speed = 500
+sizePill = 15
+sizePlayer = sizePill
+spawnInterval = 57 / speed
+
 (width, height) = (400, 400)
 (hWidth, hHeight) = (width / 2, height / 2)
 
+-- HELPER FUNCTIONS
 relativeMouse : (Int, Int) -> (Int, Int) -> (Int, Int)
 relativeMouse (ox, oy) (x,y) = (x - ox, -(y - oy))
 
 center : (Int, Int) -> (Int, Int)
 center (w, h) = (div w 2, div h 2)
+
+tf : Float -> Float -> String -> Form
+tf y scl str = toText str |> Text.color gray
+                          |> text 
+                          |> toForm
+                          |> scale scl 
+                          |> move (0, y)
 
 type Vec = (Float, Float)
 
@@ -25,16 +39,40 @@ vecLen (x,y) = sqrt (x * x + y * y)
 vecMulS : Vec -> Time -> Vec
 vecMulS (x, y) t = (x*t, y*t)
 
+-- INPUT
+delta = (fps 30)
+
+input = (,) <~ lift inSeconds delta
+             ~ sampleOn delta 
+                        (lift2 relativeMouse 
+                               (lift center Window.dimensions) 
+                               Mouse.position)
+
+randFloat sig = (lift (\x -> x / 100) 
+                        (lift toFloat (Random.range 0 100 sig)))
+
+rand fn sig = lift fn (randFloat sig)
+randX = rand (\r -> (width * r) + -hWidth)
+randCol = rand (\r -> if r < 0.1 then lightBlue else defaultPill.col)
+
+interval = (every (second * spawnInterval))
+
+event = merges [ lift Tick input
+               , lift2 (\x col -> Add (newPill x col)) 
+                         (randX interval) (randCol interval) 
+               , lift (\_ -> Click) Mouse.isClicked ]
+
+-- MODEL
 type Pill = {pos:Vec, vel:Vec, rad:Float, col:Color}
 
 
 defaultPill = { pos = (0,hHeight)
-              , vel = (0,-500)
-              , rad = 15
+              , vel = (0,-speed)
+              , rad = sizePill
               , col = lightRed }
 
 defaultPlayer = { defaultPill | col <- black
-                ,               pos <- (0, -hHeight - defaultPill.rad) }
+                ,               pos <- (0, -hHeight - sizePlayer) }
 
 data State = Play | Over | Start
 type Game = { player : Pill 
@@ -51,6 +89,7 @@ newPill : Float -> Color -> Pill
 newPill x col = { defaultPill | pos <- (x, hHeight) 
                               , col <- col }
 
+-- UPDATE
 data Event = Tick (Time, (Int, Int)) | Add Pill | Click
 
 stepPlay : Event -> Game -> Game 
@@ -90,9 +129,8 @@ stepGame event ({state} as g) =
     let playGame = { defaultGame | state <- Play }
         toPlay = if click event then playGame else g
     in case state of
-         Start -> toPlay 
          Play  -> stepPlay event g
-         Over  -> toPlay
+         _     -> toPlay
 
 stepPlayer : (Int, Int) -> Pill -> Pill
 stepPlayer (x,y) p = { p | pos <- (toFloat x, toFloat y) }
@@ -100,14 +138,7 @@ stepPlayer (x,y) p = { p | pos <- (toFloat x, toFloat y) }
 stepPill : Time -> Pill -> Pill
 stepPill t p = { p | pos <- vecAdd p.pos (vecMulS p.vel t) }
 
-tf : Float -> Float -> String -> Form
-tf y scl str = toText str |> Text.color gray
-                          |> text 
-                          |> toForm
-                          |> scale scl 
-                          |> move (0, y)
-
-
+-- DISPLAY
 render : (Int, Int) -> Game -> Element
 render (w, h) g = 
     let formPill {rad, col, pos} = 
@@ -124,28 +155,6 @@ render (w, h) g =
     in color lightGray <| container w h middle 
                        <| color white
                        <| collage width height forms
-
-delta = (fps 30)
-
-input = (,) <~ lift inSeconds delta
-             ~ sampleOn delta 
-                        (lift2 relativeMouse 
-                               (lift center Window.dimensions) 
-                               Mouse.position)
-
-randFloat sig = (lift (\x -> x / 100) 
-                        (lift toFloat (Random.range 0 100 sig)))
-
-rand fn sig = lift fn (randFloat sig)
-randX = rand (\r -> (width * r) + -hWidth)
-randCol = rand (\r -> if r < 0.1 then lightBlue else defaultPill.col)
-
-interval = (every (second * 0.5))
-
-event = merges [ lift Tick input
-               , lift2 (\x col -> Add (newPill x col)) 
-                         (randX interval) (randCol interval) 
-               , lift (\_ -> Click) Mouse.isClicked ]
 
 main : Signal Element
 main = render <~ Window.dimensions ~ foldp stepGame defaultGame event
