@@ -23,15 +23,26 @@ defaultPill = { pos = (0,0)
               , rad = 15
               , col = lightRed }
 
+defaultPlayer = { defaultPill | col <- black }
+
+type Game = { player:Pill, pill:Pill}
+
+defaultGame = { player = defaultPlayer
+              , pill   = defaultPill
+              }
+
+stepGame: Time -> Game -> Game 
+stepGame t g = { g | pill <- stepPill t g.pill }
+
 stepPill : Time -> Pill -> Pill
 stepPill t p = { p | pos <- vecAdd p.pos (vecMulS p.vel t) }
 
-render : (Int, Int) -> Pill -> Element
-render (w, h) pill = 
+render : (Int, Int) -> Game -> Element
+render (w, h) game = 
     let formPill {rad, col, pos} = 
                      circle rad |> filled col
                                 |> move pos
-        forms = [formPill pill] 
+        forms = [formPill game.player, formPill game.pill] 
     in color lightGray <| container w h middle 
                        <| color white
                        <| collage 400 400 forms
@@ -39,4 +50,4 @@ render (w, h) pill =
 sig = lift inSeconds (fps 30)
 
 main : Signal Element
-main = render <~ Window.dimensions ~ foldp stepPill defaultPill sig
+main = render <~ Window.dimensions ~ foldp stepGame defaultGame sig
