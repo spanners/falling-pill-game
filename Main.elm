@@ -105,10 +105,11 @@ render (w, h) g =
     let formPill {rad, col, pos} = 
                      circle rad |> filled col
                                 |> move pos
-        txt = case g.state of
-              Play -> tf 0 4 (show g.score) 
-              Over -> tf 0 4 ((show g.score) ++ " Game Over")
-        forms = txt :: (map formPill <| g.player :: g.pills)
+        txts = case g.state of
+                 Play -> [ tf 0 4 (show g.score) ] 
+                 Over -> [ tf 0 4 "Game Over"
+                         , tf 100 2 ("Score: " ++ (show g.score)) ]
+        forms = txts ++ (map formPill <| g.player :: g.pills)
     in color lightGray <| container w h middle 
                        <| color white
                        <| collage width height forms
