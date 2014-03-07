@@ -52,8 +52,9 @@ data Event = Tick (Time, (Int, Int)) | Add Pill
 stepGame: Event -> Game -> Game 
 stepGame event g = 
    case event of 
-       Tick (t, mouse) -> let hit pill = (vecLen <| vecSub g.player.pos pill.pos) 
-                                           < g.player.rad + pill.rad
+       Tick (t, mouse) -> let hit pill = 
+                                (vecLen <| vecSub g.player.pos pill.pos) 
+                                  < g.player.rad + pill.rad
                               offscreen {pos} = snd pos > -hHeight
                               unculled = filter offscreen g.pills
                               untouched = filter (not . hit) unculled
@@ -89,9 +90,13 @@ render (w, h) g =
 delta = (fps 30)
 
 input = (,) <~ lift inSeconds delta
-             ~ sampleOn delta (lift2 relativeMouse (lift center Window.dimensions) Mouse.position)
+             ~ sampleOn delta 
+                        (lift2 relativeMouse 
+                               (lift center Window.dimensions) 
+                               Mouse.position)
 
-randFloat sig = (lift (\x -> x / 100) (lift toFloat (Random.range 0 100 sig)))
+randFloat sig = (lift (\x -> x / 100) 
+                        (lift toFloat (Random.range 0 100 sig)))
 
 rand fn sig = lift fn (randFloat sig)
 randX = rand (\r -> (width * r) + -hWidth)
@@ -100,7 +105,8 @@ randCol = rand (\r -> if r < 0.1 then lightBlue else defaultPill.col)
 interval = (every (second * 2))
 
 event = merges [ lift Tick input
-               , lift2 (\x col -> Add (newPill x col)) (randX interval) (randCol interval) ]
+               , lift2 (\x col -> Add (newPill x col)) 
+                         (randX interval) (randCol interval) ]
 
 main : Signal Element
 main = render <~ Window.dimensions ~ foldp stepGame defaultGame event
