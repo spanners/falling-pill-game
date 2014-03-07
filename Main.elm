@@ -36,10 +36,12 @@ defaultPill = { pos = (0,hHeight)
 defaultPlayer = { defaultPill | col <- black
                 ,               pos <- (0, 0) }
 
-type Game = { player:Pill, pills:[Pill] }
+type Game = { player:Pill, pills:[Pill], score:Int }
 
 defaultGame = { player = defaultPlayer
-              , pills  = [] }
+              , pills  = [] 
+              , score = 0
+              }
 
 newPill : Float -> Color -> Pill
 newPill x col = { defaultPill | pos <- (x, hHeight) 
@@ -48,12 +50,14 @@ newPill x col = { defaultPill | pos <- (x, hHeight)
 data Event = Tick (Time, (Int, Int)) | Add Pill
 
 stepGame: Event -> Game -> Game 
-stepGame event ({player, pills} as g) = 
+stepGame event g = 
    case event of 
-       Tick (t, mouse) -> let hit pill = (vecLen <| vecSub player.pos pill.pos) < player.rad + pill.rad
-                              unculled = filter (\{pos} -> snd pos > -hHeight) pills
+       Tick (t, mouse) -> let hit pill = (vecLen <| vecSub g.player.pos pill.pos) 
+                                           < g.player.rad + pill.rad
+                              offscreen {pos} = snd pos > -hHeight
+                              unculled = filter offscreen g.pills
                               untouched = filter (not . hit) unculled
-                          in { g | player <- stepPlayer mouse player
+                          in { g | player <- stepPlayer mouse g.player
                              , pills <- map (stepPill t) untouched }
        Add p           -> { g | pills <- p :: g.pills }
 
