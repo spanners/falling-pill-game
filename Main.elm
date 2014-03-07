@@ -80,14 +80,9 @@ input = (,) <~ lift inSeconds delta
 
 randFloat sig = (lift (\x -> x / 100) (lift toFloat (Random.range 0 100 sig)))
 
-randX sig = let rnd = randFloat sig
-                coord r = (width * r) + -hWidth
-            in lift coord rnd
-
-randCol sig = let rnd = randFloat sig
-                  col r = if r < 0.1 then lightBlue else defaultPill.col
-            in lift col rnd
-
+rand fn sig = lift fn (randFloat sig)
+randX = rand (\r -> (width * r) + -hWidth)
+randCol = rand (\r -> if r < 0.1 then lightBlue else defaultPill.col)
 
 interval = (every (second * 2))
 
