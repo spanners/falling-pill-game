@@ -20,19 +20,20 @@ defaultPill = { pos = (0,0)
               , rad = 15
               , col = lightRed }
 
-stepPill : Pill -> Pill
-stepPill p = { p | pos <- vecAdd p.pos p.vel }
+stepPill : Time -> Pill -> Pill
+stepPill t p = { p | pos <- vecAdd p.pos p.vel }
 
-render (w, h) = 
+render : (Int, Int) -> Pill -> Element
+render (w, h) pill = 
     let formPill {rad, col, pos} = 
                      circle rad |> filled col
                                 |> move pos
-        forms = [formPill <| stepPill defaultPill] 
+        forms = [formPill pill] 
     in color lightGray <| container w h middle 
                        <| color white
                        <| collage 400 400 forms
 
 main : Signal Element
-main = lift render Window.dimensions
+main = render <~ Window.dimensions ~ foldp stepPill defaultPill (fps 30)
 
 
