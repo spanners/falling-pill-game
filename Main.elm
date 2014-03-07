@@ -31,8 +31,13 @@ defaultGame = { player = defaultPlayer
               , pill   = defaultPill
               }
 
-stepGame: Time -> Game -> Game 
-stepGame t g = { g | pill <- stepPill t g.pill }
+stepGame: (Time, (Int, Int)) -> Game -> Game 
+stepGame (t, mouse) g = { g | player <- stepPlayer mouse g.player
+                        , pill <- stepPill t g.pill
+                        }
+
+stepPlayer : (Int, Int) -> Pill -> Pill
+stepPlayer (x,y) p = { p | pos <- (toFloat x, toFloat y) }
 
 stepPill : Time -> Pill -> Pill
 stepPill t p = { p | pos <- vecAdd p.pos (vecMulS p.vel t) }
@@ -47,7 +52,9 @@ render (w, h) game =
                        <| color white
                        <| collage 400 400 forms
 
-sig = lift inSeconds (fps 30)
+
+input = (,) <~ lift inSeconds (fps 30)
+             ~ lift2 relativeMouse (lift center Window.dimensions) Mouse.position
 
 main : Signal Element
-main = render <~ Window.dimensions ~ foldp stepGame defaultGame sig
+main = render <~ Window.dimensions ~ foldp stepGame defaultGame input 
