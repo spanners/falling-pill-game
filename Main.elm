@@ -63,13 +63,18 @@ stepPlay event g =
                               unculled = filter offscreen g.pills
                               untouched = filter (not . hit) unculled
                               touched = filter hit unculled
-                              hitColor c = not <| isEmpty <| filter (\{col} -> col == c) touched
+                              hitColor c = not 
+                                             <| isEmpty 
+                                             <| filter (\{col} -> col == c) 
+                                                  touched
                               hitBlue = hitColor lightBlue
                               hitRed = hitColor lightRed
+                              out = let (x,y) = mouse in abs (toFloat x) >  hWidth 
+                                                           || abs (toFloat y) > hHeight
                               g' = { g | player <- stepPlayer mouse g.player
                                    , pills  <- map (stepPill t) untouched
                                    , score  <- if hitBlue then g.score + 1 else g.score }
-                          in if hitRed then { defaultGame | score <- g'.score
+                          in if hitRed || out then { defaultGame | score <- g'.score
                                                           , state <- Over } else g'
        Add p           -> { g | pills <- p :: g.pills }
        Click           -> g
