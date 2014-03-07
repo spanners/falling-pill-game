@@ -107,8 +107,9 @@ render (w, h) g =
                                 |> move pos
         txts = case g.state of
                  Play -> [ tf 0 4 (show g.score) ] 
-                 Over -> [ tf 0 4 "Game Over"
-                         , tf 100 2 ("Score: " ++ (show g.score)) ]
+                 Over -> [ tf 70 4 "Game Over"
+                         , tf 0 4 (show g.score)
+                         , tf -100 2 "Click to Restart" ]
         forms = txts ++ (map formPill <| g.player :: g.pills)
     in color lightGray <| container w h middle 
                        <| color white
