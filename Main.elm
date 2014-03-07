@@ -19,7 +19,7 @@ type Pill = {pos:Vec, vel:Vec, rad:Float, col:Color}
 
 
 defaultPill = { pos = (0,0)
-              , vel = (0,-1)
+              , vel = (0,-30)
               , rad = 15
               , col = lightRed }
 
@@ -36,7 +36,7 @@ render (w, h) pill =
                        <| color white
                        <| collage 400 400 forms
 
+sig = lift inSeconds (fps 30)
+
 main : Signal Element
-main = render <~ Window.dimensions ~ foldp stepPill defaultPill (fps 30)
-
-
+main = render <~ Window.dimensions ~ foldp stepPill defaultPill sig
