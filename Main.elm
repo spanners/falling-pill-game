@@ -36,21 +36,25 @@ defaultPill = { pos = (0,hHeight)
 defaultPlayer = { defaultPill | col <- black
                 ,               pos <- (0, 0) }
 
-type Game = { player:Pill, pills:[Pill], score:Int }
+data State = Play | Over
+type Game = { player : Pill 
+            , pills  : [Pill]
+            , score  : Int
+            , state  : State }
 
 defaultGame = { player = defaultPlayer
               , pills  = [] 
-              , score = 0
-              }
+              , score  = 0 
+              , state  = Play }
 
 newPill : Float -> Color -> Pill
 newPill x col = { defaultPill | pos <- (x, hHeight) 
                               , col <- col }
 
-data Event = Tick (Time, (Int, Int)) | Add Pill
+data Event = Tick (Time, (Int, Int)) | Add Pill | Click
 
-stepGame: Event -> Game -> Game 
-stepGame event g = 
+stepPlay : Event -> Game -> Game 
+stepPlay event g = 
    case event of 
        Tick (t, mouse) -> let hit pill = 
                                 (vecLen <| vecSub g.player.pos pill.pos) 
@@ -65,8 +69,22 @@ stepGame event g =
                               g' = { g | player <- stepPlayer mouse g.player
                                    , pills  <- map (stepPill t) untouched
                                    , score  <- if hitBlue then g.score + 1 else g.score }
-                          in if hitRed then defaultGame else g'
+                          in if hitRed then { defaultGame | score <- g'.score
+                                                          , state <- Over } else g'
        Add p           -> { g | pills <- p :: g.pills }
+       Click           -> g
+
+click : Event -> Bool
+click event = 
+    case event of
+        Click -> True
+        _     -> False
+
+stepGame : Event -> Game -> Game 
+stepGame event ({state} as g) =
+    case state of
+        Play -> stepPlay event g
+        Over -> if click event then defaultGame else g 
 
 stepPlayer : (Int, Int) -> Pill -> Pill
 stepPlayer (x,y) p = { p | pos <- (toFloat x, toFloat y) }
@@ -87,7 +105,9 @@ render (w, h) g =
     let formPill {rad, col, pos} = 
                      circle rad |> filled col
                                 |> move pos
-        txt = tf 0 4 (show g.score) 
+        txt = case g.state of
+              Play -> tf 0 4 (show g.score) 
+              Over -> tf 0 4 ((show g.score) ++ " Game Over")
         forms = txt :: (map formPill <| g.player :: g.pills)
     in color lightGray <| container w h middle 
                        <| color white
@@ -112,7 +132,8 @@ interval = (every (second * 0.5))
 
 event = merges [ lift Tick input
                , lift2 (\x col -> Add (newPill x col)) 
-                         (randX interval) (randCol interval) ]
+                         (randX interval) (randCol interval) 
+               , lift (\_ -> Click) Mouse.isClicked ]
 
 main : Signal Element
 main = render <~ Window.dimensions ~ foldp stepGame defaultGame event
