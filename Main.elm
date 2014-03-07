@@ -63,12 +63,21 @@ stepPlayer (x,y) p = { p | pos <- (toFloat x, toFloat y) }
 stepPill : Time -> Pill -> Pill
 stepPill t p = { p | pos <- vecAdd p.pos (vecMulS p.vel t) }
 
+tf : Float -> Float -> String -> Form
+tf y scl str = toText str |> Text.color gray
+                          |> text 
+                          |> toForm
+                          |> scale scl 
+                          |> move (0, y)
+
+
 render : (Int, Int) -> Game -> Element
-render (w, h) game = 
+render (w, h) g = 
     let formPill {rad, col, pos} = 
                      circle rad |> filled col
                                 |> move pos
-        forms = formPill game.player :: map formPill game.pills 
+        txt = tf 0 2 "Simon"
+        forms = txt :: (map formPill <| g.player :: g.pills)
     in color lightGray <| container w h middle 
                        <| color white
                        <| collage width height forms
