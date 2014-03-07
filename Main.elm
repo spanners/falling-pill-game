@@ -1,6 +1,9 @@
 import Mouse
 import Window
 
+(width, height) = (400, 400)
+(hWidth, hHeight) = (width / 2, height / 2)
+
 relativeMouse : (Int, Int) -> (Int, Int) -> (Int, Int)
 relativeMouse (ox, oy) (x,y) = (x - ox, -(y - oy))
 
@@ -18,7 +21,7 @@ vecMulS (x, y) t = (x*t, y*t)
 type Pill = {pos:Vec, vel:Vec, rad:Float, col:Color}
 
 
-defaultPill = { pos = (0,0)
+defaultPill = { pos = (0,hHeight)
               , vel = (0,-30)
               , rad = 15
               , col = lightRed }
@@ -50,11 +53,12 @@ render (w, h) game =
         forms = [formPill game.player, formPill game.pill] 
     in color lightGray <| container w h middle 
                        <| color white
-                       <| collage 400 400 forms
+                       <| collage width height forms
 
+delta = (fps 30)
 
-input = (,) <~ lift inSeconds (fps 30)
-             ~ lift2 relativeMouse (lift center Window.dimensions) Mouse.position
+input = (,) <~ lift inSeconds delta
+             ~ sampleOn delta (lift2 relativeMouse (lift center Window.dimensions) Mouse.position)
 
 main : Signal Element
 main = render <~ Window.dimensions ~ foldp stepGame defaultGame input 
